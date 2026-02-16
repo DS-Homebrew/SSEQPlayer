@@ -21,7 +21,7 @@ char* CurrentNDS;
 char* CurrentSPS;
 char* CurrentFileSTR;
 
-u32 Max_RAM = 3800000;
+u32 Max_RAM = 0x39BFC0;
 
 u32 FileCount;
 u32 CurrentFile;
@@ -78,9 +78,8 @@ int main(int _argc, char **_argv)
 	consoleDemoInit();
 	InstallSoundSys();
 	
-	REG_SCFG_EXT = 0x8307F100;
-	if(REG_SCFG_EXT == 0x8307F100) {
-		Max_RAM = 7800000;	// Increase RAM limit for DSi mode
+	if (isDSiMode()) {
+		Max_RAM = 0xF00000;	// Increase RAM limit for DSi mode
 	}
 
 	argc=_argc; argv=_argv;
