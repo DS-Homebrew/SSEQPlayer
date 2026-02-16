@@ -222,13 +222,13 @@ int _Note(void* bnk, void** war, int instr, int note, int prio, playinfo_t* play
 #ifdef SNDSYS_DEBUG
 	returnMsg msg;
 	msg.channel = track;
-#endif	
+#endif
 	int isPsg = 0;
 	int ch = ds_freechn2(prio);
 	if (ch < 0) return -1;
 
 	ADSR_stat_t* chstat = ADSR_ch + ch;
-	
+
 	u32 inst = GetInstr(bnk, instr);
 	u8* insdata = GETINSTDATA(bnk, inst);
 	notedef_t* notedef = NULL;
@@ -286,12 +286,12 @@ _ReadRecord:
 		for(reg = 0; reg < 8; reg ++)
 			if (note <= insdata[reg]) break;
 		if (reg == 8) return -1;
-		
+
 		int offset = 8 + reg*(2+sizeof(notedef_t));
 		fRecord = insdata[offset];
 		insdata += offset + 2;
 		goto _ReadRecord;
-	}else 
+	}else
 	{
 #ifdef SNDSYS_DEBUG
 		msg.count=2;
@@ -314,7 +314,7 @@ _ReadRecord:
 	}
 
 	trackstat_t* pTrack = tracks + track;
-	
+
 	chstat->vol = playinfo->vol;
 	chstat->vel = playinfo->vel;
 	chstat->expr = playinfo->expr;
@@ -385,16 +385,16 @@ void PlaySeq(data_t* seq, data_t* bnk, data_t* war)
 	seqWar[1] = war[1].data;
 	seqWar[2] = war[2].data;
 	seqWar[3] = war[3].data;
-	
+
 	//Some tracks alter this, and may cause undesireable effects with playing other tracks later.
 	ADSR_mastervolume = 127;
-	
+
 	// Load sequence data
 	seqData = (u8*)seq->data + ((u32*)seq->data)[6];
 	ntracks = 1;
-	
+
 	int pos = 0;
-	
+
 #ifdef SNDSYS_DEBUG
 	returnMsg msg;
 	msg.count=3;
@@ -930,6 +930,6 @@ void track_tick(int n)
 		}
 		if(msg.count)
 			fifoSendDatamsg(FIFO_RETURN, sizeof(msg), (u8*)&msg);
-		
+
 	}
 }

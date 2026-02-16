@@ -1,6 +1,6 @@
 *.bin
 *.elf
-*/build
+build
 *.nds
 /oldfs
 *.sseq

@@ -33,12 +33,6 @@
 //---------------------------------------------------------------------------------
 void VblankHandler(void) {
 //---------------------------------------------------------------------------------
-}
-
-
-//---------------------------------------------------------------------------------
-void VcountHandler() {
-//---------------------------------------------------------------------------------
 	inputGetAndSend();
 }
 
@@ -54,28 +48,33 @@ void powerButtonCB() {
 int main() {
 	u32 i=0;
 //---------------------------------------------------------------------------------
-	readUserSettings();
+    // Read user information from the firmware (name, birthday, etc)
+    readUserSettings();
 
-	irqInit();
-	// Start the RTC tracking IRQ
-	initClockIRQ();
-	fifoInit();
+    // Stop LED blinking
+    ledBlink(LED_ALWAYS_ON);
+
+    irqInit();
+    fifoInit();
+
+	installSoundFIFO();
+	installSystemFIFO();
+
+    // This sets a callback that is called when the power button in a DSi
+    // console is pressed. It has no effect in a DS.
+    setPowerButtonCB(powerButtonCB);
+
+    // Read current date from the RTC and setup an interrupt to update the time
+    // regularly. The interrupt simply adds one second every time, it doesn't
+    // read the date. Reading the RTC is very slow, so it's a bad idea to do it
+    // frequently.
+    initClockIRQTimer(3);
 
 	//mmInstall(FIFO_MAXMOD);
 	InstallSoundSys();
 
-	SetYtrigger(80);
-
-	installSoundFIFO();
-
-	installSystemFIFO();
-
-	irqSet(IRQ_VCOUNT, VcountHandler);
 	irqSet(IRQ_VBLANK, VblankHandler);
-
-	irqEnable( IRQ_VBLANK | IRQ_VCOUNT);
-	
-	setPowerButtonCB(powerButtonCB);   
+	irqEnable(IRQ_VBLANK);
 
 	// Keep the ARM7 mostly idle
 	while (!exitflag) {

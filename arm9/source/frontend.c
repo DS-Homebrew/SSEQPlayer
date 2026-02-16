@@ -134,7 +134,7 @@ bool _readFrontend(char *target){
 		fread(&extlink,1,sizeof(TExtLinkBody),f);
 		if(extlink.ID!=ExtLinkBody_ID){fclose(f);return false;}
 		//strcpy(target,extlink.DataFullPathFilenameAlias);
-		ucs2tombs(target,extlink.DataFullPathFilenameUnicode,768);
+		ucs2tombs((unsigned char*)target,extlink.DataFullPathFilenameUnicode,768);
 		fseek(f,0,SEEK_SET);
 		fwrite("____",1,4,f);
 		fclose(f);

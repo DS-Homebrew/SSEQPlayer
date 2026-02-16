@@ -7,6 +7,9 @@
 #include <string.h>
 #include <dirent.h>
 
+#include "frontend.h"
+#include "sndbase.h"
+
 void ReadDIR();
 void ShowDIR();
 void ReadSPS();
@@ -21,7 +24,7 @@ char* CurrentNDS;
 char* CurrentSPS;
 char* CurrentFileSTR;
 
-u32 Max_RAM = 0x39BFC0;
+u32 Max_RAM = 0x3C0000;
 
 u32 FileCount;
 u32 CurrentFile;
@@ -77,15 +80,15 @@ int main(int _argc, char **_argv)
 	powerOff(PM_BACKLIGHT_TOP);
 	consoleDemoInit();
 	InstallSoundSys();
-	
+
 	if (isDSiMode()) {
-		Max_RAM = 0xF00000;	// Increase RAM limit for DSi mode
+		Max_RAM = 0xF80000;	// Increase RAM limit for DSi mode
 	}
 
 	argc=_argc; argv=_argv;
 	if(!fatInitDefault())
 	{
-		iprintf("Filesystem FAIL");
+		printf("Filesystem FAIL");
 		for(;;) swiWaitForVBlank();
 	}
 
@@ -116,7 +119,7 @@ int main(int _argc, char **_argv)
 			scrollpos = 0;
 			scrollposcounter = 10;
 		}
-		
+
 		if(scrollposcounter==0)
 		{
 			scrollposcounter=10;
@@ -168,34 +171,34 @@ int main(int _argc, char **_argv)
 				if(message_data[i])
 				{
 #ifdef SNDSYS_DEBUG
-					iprintf("cmd = %.2X:%.2X",message_data[i+1],message_data[i+2]);
+					printf("cmd = %.2X:%.2X",message_data[i+1],message_data[i+2]);
 					if(message_data[i]==3)
-						iprintf(":%.2X\n",message_data[i+3]);
+						printf(":%.2X\n",message_data[i+3]);
 					else
-						iprintf("\n");
+						printf("\n");
 #endif
 					switch (message_data[i+1])
 					{
 #ifdef SNDSYS_DEBUG
 						case 0x00:
-							iprintf("00 Unrecognized record: %d\n",message_data[i+2]);
+							printf("00 Unrecognized record: %d\n",message_data[i+2]);
 							break;
 						case 0x04:
-							iprintf("%X:",message_data[i+5]);
-							iprintf("04 SEQUENCE IS MULTI-TRACK\n");
+							printf("%X:",message_data[i+5]);
+							printf("04 SEQUENCE IS MULTI-TRACK\n");
 							break;
 						case 0x03:
-							iprintf("%X:",message_data[i+5]);
-							iprintf("03 SEQUENCE IS SINGLE-TRACK\n");
+							printf("%X:",message_data[i+5]);
+							printf("03 SEQUENCE IS SINGLE-TRACK\n");
 							break;
 						case 0x05:
-							iprintf("%X:",message_data[i+5]);
-							iprintf("05 CREATED TRACK %d\n",message_data[i+2]);
+							printf("%X:",message_data[i+5]);
+							printf("05 CREATED TRACK %d\n",message_data[i+2]);
 							break;
 #endif
 						case 0x06:
 							if(PlayMode)
-								iprintf("06 SEQUENCE STOPPED\n");
+								printf("06 SEQUENCE STOPPED\n");
 							if(PlayMode && AutoPlay && !ManualStop)
 							{
 								if(CurrentSSEQ < SSEQCount - 1)
@@ -203,13 +206,13 @@ int main(int _argc, char **_argv)
 			                      CurrentSSEQ++;
 			                      ReadSSEQ();
 			                    }
-			                    
+
 							}
 							ManualStop = false;
 							break;
 						case 0x07:
 							if(PlayMode)
-								iprintf("07 Track has looped twice\n");
+								printf("07 Track has looped twice\n");
 							if(PlayMode && AutoPlay)
 							{
 								FadeSeq();
@@ -217,7 +220,7 @@ int main(int _argc, char **_argv)
 							break;
 						case 0x08:
 							if(PlayMode)
-								iprintf("08 Track has ended\n");
+								printf("08 Track has ended\n");
 							if(PlayMode && AutoPlay)
 							{
 								if(CurrentSSEQ < SSEQCount - 1)
@@ -227,73 +230,73 @@ int main(int _argc, char **_argv)
 			                    }
 							}
 							break;
-							
+
 						case 0xC1: // Track Volume
-							iprintf("%X:", message_data[i+5]);
-							iprintf("C1     Track Volume: %d\n", message_data[i+2]);
+							printf("%X:", message_data[i+5]);
+							printf("C1     Track Volume: %d\n", message_data[i+2]);
 							break;
-							
+
 						case 0xC2: // MASTER VOLUME
-							iprintf("%X:", message_data[i+5]);
-							iprintf("C2    MASTER VOLUME: %d\n", message_data[i+2]);
+							printf("%X:", message_data[i+5]);
+							printf("C2    MASTER VOLUME: %d\n", message_data[i+2]);
 							break;
-							
+
 #ifdef SNDSYS_DEBUG
 						case 0x94: // JUMP
-							iprintf("%X:",message_data[i+5]);
-							iprintf("94     POSITION JUMP:\n");
+							printf("%X:",message_data[i+5]);
+							printf("94     POSITION JUMP:\n");
 							break;
 						case 0xC3: // TRANSPOSE
-							iprintf("C3         TRANSPOSE: %.2X\n",message_data[i+2]);
+							printf("C3         TRANSPOSE: %.2X\n",message_data[i+2]);
 							break;
 						case 0xC8: // TIE
-							iprintf("C8               TIE: %.2X\n",message_data[i+2]);
+							printf("C8               TIE: %.2X\n",message_data[i+2]);
 							break;
 						case 0xC9: // PORTAMENTO
-							iprintf("C9        PORTAMENTO: %.2X\n",message_data[i+2]);
+							printf("C9        PORTAMENTO: %.2X\n",message_data[i+2]);
 							break;
 						case 0xCA: // MODULATION DEPTH
-							iprintf("CA  MODULATION DEPTH: %.2X\n",message_data[i+2]);
+							printf("CA  MODULATION DEPTH: %.2X\n",message_data[i+2]);
 							break;
 						case 0xCB: // MODULATION SPEED
-							iprintf("CB  MODULATION SPEED: %.2X\n",message_data[i+2]);
+							printf("CB  MODULATION SPEED: %.2X\n",message_data[i+2]);
 							break;
 						case 0xCC: // MODULATION TYPE
-							iprintf("CC   MODULATION TYPE: %.2X\n",message_data[i+2]);
+							printf("CC   MODULATION TYPE: %.2X\n",message_data[i+2]);
 							break;
 						case 0xCD: // MODULATION RANGE
-							iprintf("CD  MODULATION RANGE: %.2X\n",message_data[i+2]);
+							printf("CD  MODULATION RANGE: %.2X\n",message_data[i+2]);
 							break;
 						case 0xCE: // PORTAMENTO ON/OFF
-							iprintf("CE PORTAMENTO ON/OFF: %.2X\n",message_data[i+2]);
+							printf("CE PORTAMENTO ON/OFF: %.2X\n",message_data[i+2]);
 							break;
 						case 0xCF: // PORTAMENTO TIME
-							iprintf("CF   PORTAMENTO TIME: %.2X\n",message_data[i+2]);
+							printf("CF   PORTAMENTO TIME: %.2X\n",message_data[i+2]);
 							break;
 						case 0xD4: //LOOP START
-							iprintf("%X:",message_data[i+5]);
-							iprintf("D4        LOOP START: %d\n",message_data[i+2]);
+							printf("%X:",message_data[i+5]);
+							printf("D4        LOOP START: %d\n",message_data[i+2]);
 							break;
 						case 0xD6: // PRINT VAR
-							iprintf("D6         PRINT VAR: %.2X\n",message_data[i+2]);
+							printf("D6         PRINT VAR: %.2X\n",message_data[i+2]);
 							break;
-							
+
 						case 0xE0: // MODULATION DELAY
-							iprintf("E0  MODULATION DELAY: %.2X %.2X\n",message_data[i+2],message_data[i+3]);
+							printf("E0  MODULATION DELAY: %.2X %.2X\n",message_data[i+2],message_data[i+3]);
 							break;
 						case 0xE3: // SWEEP PITCH
-							iprintf("E3       SWEEP PITCH: %.2X %.2X\n",message_data[i+2],message_data[i+3]);
+							printf("E3       SWEEP PITCH: %.2X %.2X\n",message_data[i+2],message_data[i+3]);
 							break;
 						case 0xFC:
-							iprintf("%X:",message_data[i+5]);
-							iprintf("FC          LOOP END:\n");
+							printf("%X:",message_data[i+5]);
+							printf("FC          LOOP END:\n");
 							break;
 						case 0xFF:
-							iprintf("%X:",message_data[i+5]);
-							iprintf("FF      END OF TRACK:\n");
+							printf("%X:",message_data[i+5]);
+							printf("FF      END OF TRACK:\n");
 							break;
 						default:
-							iprintf("%.2X  Unrecognized cmd: %.2X %.2X %.2X",message_data[i+1],message_data[i+2],message_data[i+3],message_data[i+4]);
+							printf("%.2X  Unrecognized cmd: %.2X %.2X %.2X",message_data[i+1],message_data[i+2],message_data[i+3],message_data[i+4]);
 							break;
 #endif
 					}
@@ -320,12 +323,12 @@ int main(int _argc, char **_argv)
 					{
 						free(CurrentSPS);
 					}
-					
+
 					CurrentSPS = malloc(23 + strlen(DIRList[CurrentFile])+1);
 					strcpy(CurrentSPS, "/data/NDS Music Player/");
 					strcat(CurrentSPS, DIRList[CurrentFile]);
 					CurrentSPS[23 + strlen(DIRList[CurrentFile])]=0;
-						
+
 					ReadSPS();
 				}
 			}
@@ -353,7 +356,7 @@ int main(int _argc, char **_argv)
 				}
 			}
 		}
-		
+
 		if (keysDown() & KEY_X)
 		{
 			ManualStop = true;
@@ -364,19 +367,19 @@ int main(int _argc, char **_argv)
 			ManualStop = true;
 			FadeSeq();
 		}
-		
+
 		if(keysDown() & KEY_SELECT)
 		{
 			AutoPlay = !AutoPlay;
 			if(PlayMode)
 			{
 				if(AutoPlay)
-					iprintf("Auto Play enabled\n");
+					printf("Auto Play enabled\n");
 				else
-					iprintf("Auto Play disabled\n");
+					printf("Auto Play disabled\n");
 			}
 		}
-		
+
 		if(keysDown() & KEY_START)
 		{
 			PauseSeq();
@@ -569,14 +572,14 @@ int IsValidSPS(char *SPS)
 	fread(CurrentNDS, 1, CharCount, f);
 	CurrentNDS[CharCount] = 0;
 	fclose(f);
-	
+
 	f = fopen(CurrentNDS, "rb");
 	if(!f)
 	{
-		iprintf(":( ");
+		printf(":( ");
 		return 0;
 	}
-	iprintf(":) ");
+	printf(":) ");
 	fclose(f);
 	return 1;
 }
@@ -587,7 +590,6 @@ void ReadDIR()
 	u32 InvalidSPS = 0;
 	DIR *pdir;
 	struct dirent *pent;
-	struct stat statbuf;
 	char *SPSPath=NULL;
 
 	pdir = opendir("/data/NDS Music Player/");
@@ -595,7 +597,6 @@ void ReadDIR()
 	{
 		while ((pent = readdir(pdir)) != NULL)
 		{
-			stat(pent -> d_name, &statbuf);
 			//if((pent -> d_name[strlen(pent -> d_name) - 4] == '.') && (pent -> d_name[strlen(pent -> d_name) - 3] == 's') && (pent -> d_name[strlen(pent -> d_name) - 2] == 'p') && (pent -> d_name[strlen(pent -> d_name) - 1] == 's'))
 			//{
 			if((pent-> d_name[0] == '.') && (strlen(pent -> d_name) == 1))
@@ -627,7 +628,7 @@ void ReadDIR()
 		FileCount--;
 		if(InvalidSPS)
 		{
-			iprintf("At least one SPS no longer has\nIts matching rom FILE\nPlease Run SPS Maker Again.\n\nPress B to continue");
+			printf("At least one SPS no longer has\nIts matching rom FILE\nPlease Run SPS Maker Again.\n\nPress B to continue");
 			swiWaitForVBlank();
 			while(!(keysDown() & KEY_B))
 			{
@@ -638,7 +639,7 @@ void ReadDIR()
 	}
 	else
 	{
-		iprintf("/data/NDS Music Player/ was not found.\nPlease run SPS Maker.");
+		printf("/data/NDS Music Player/ was not found.\nPlease run SPS Maker.");
 		while(1)
 		{
 			swiWaitForVBlank();
@@ -650,7 +651,7 @@ void ShowDIR()
 {
 	consoleClear();
 	u32 temp;
-	
+
 	if(DIRList[0] == NULL)
 	{
 		return;
@@ -679,14 +680,14 @@ void ShowDIR()
 		//Prints text on screen
 		if(strlen(DIRList[i])<0x1F)
 		{
-			iprintf("%s%s\n", CurrentFileSTR, DIRList[i]);
+			printf("%s%s\n", CurrentFileSTR, DIRList[i]);
 		}
 		else
 		{
 			char SSEQStr[0x20];
 			memcpy(SSEQStr,&DIRList[i][temp],0x1F);
 			SSEQStr[0x1F]=0;
-			iprintf("%s%s", CurrentFileSTR, SSEQStr);
+			printf("%s%s", CurrentFileSTR, SSEQStr);
 		}
 	}
 }
@@ -694,16 +695,16 @@ void ShowDIR()
 void ReadSPS()
 {
 	consoleClear();
-	
+
 	FILE* f = fopen(CurrentSPS, "rb");
 	if(!f)
 	{
-		iprintf("%s failed to open\n",CurrentSPS);
+		printf("%s failed to open\n",CurrentSPS);
 		return;
 	}
 
 	fseek(f, 0x0C, SEEK_SET);
-	iprintf("Reading NDS path length.\n");
+	printf("Reading NDS path length.\n");
 	swiWaitForVBlank();
 	CharCount = fgetc(f);
 
@@ -713,20 +714,20 @@ void ReadSPS()
 	}
 
 	CurrentNDS = malloc(CharCount + 1);
-	iprintf("Reading NDS path.\n");
+	printf("Reading NDS path.\n");
 	swiWaitForVBlank();
 	fread(CurrentNDS, 1, CharCount, f);
 	CurrentNDS[CharCount] = 0;
 	//fclose(f);
-	
+
 	FILE *g = fopen(CurrentNDS, "rb");
 
-	iprintf("Checking NDS path.\n");
+	printf("Checking NDS path.\n");
 	swiWaitForVBlank();
 	if(!g)
 	{
-		iprintf("%s\n", CurrentNDS);
-		iprintf("ROM not in specified location.\nPlease run SPS Maker.");
+		printf("%s\n", CurrentNDS);
+		printf("ROM not in specified location.\nPlease run SPS Maker.");
 		swiWaitForVBlank();
 		while(!(keysDown() & KEY_B))
 		{
@@ -737,22 +738,22 @@ void ReadSPS()
 	}
 	else
 	{
-		iprintf("NDS path valid.\n");
+		printf("NDS path valid.\n");
 		swiWaitForVBlank();
 	}
 	//fclose(f);
 
 	//f = fopen(CurrentSPS, "rb");
-	
+
 	//Reads SSEQCount
 	fseek(f, 0, SEEK_SET);
-	iprintf("Reading SSEQ count.\n");
+	printf("Reading SSEQ count.\n");
 	swiWaitForVBlank();
 	fread(&SSEQCount, 1, 4, f);
 
 	//Reads SSEQNameOffset
 	fseek(f, 0x04, SEEK_SET);
-	iprintf("Reading SSEQ name offset.\n");
+	printf("Reading SSEQ name offset.\n");
 	swiWaitForVBlank();
 	fread(&SSEQNameOffset, 1, 4, f);
 	fread(&SSEQDataOffset, 1, 4, f);
@@ -777,7 +778,7 @@ void ReadSPS()
 				fgetc(f);
 			}
 			continue;
-			
+
 		}
 		/*fseek(g, SSEQOffset+24, SEEK_SET);
 		u32 fileoffset;
@@ -795,7 +796,7 @@ void ReadSPS()
 			}
 			continue;
 		}*/
-		
+
 		SSEQListOffset[i] = i+j;
 		if (SSEQList[i] != NULL)
 		{
@@ -804,7 +805,7 @@ void ReadSPS()
 
 		CharCount = fgetc(f);
 		SSEQList[i] = malloc(CharCount + 1);
-		/*iprintf("Reading SSEQ_%d name.\n", i);
+		/*printf("Reading SSEQ_%d name.\n", i);
 		swiWaitForVBlank();*/
 		fread(SSEQList[i], 1, CharCount, f);
 		SSEQList[i][CharCount] = 0;
@@ -822,7 +823,7 @@ void ReadSPS()
 void ShowSSEQ()
 {
 	//Clears screen
-	consoleClear();	
+	consoleClear();
 	u32 temp;
 
 	//displays the current SSEQ and up to 22 more files after it
@@ -853,14 +854,14 @@ void ShowSSEQ()
 		//Prints text on screen
 		if(strlen(SSEQList[i])<0x1F)
 		{
-			iprintf("%s%s\n", CurrentFileSTR, SSEQList[i]);
+			printf("%s%s\n", CurrentFileSTR, SSEQList[i]);
 		}
 		else
 		{
 			char SSEQStr[0x20];
 			memcpy(SSEQStr,&SSEQList[i][temp],0x1F);
 			SSEQStr[0x1F]=0;
-			iprintf("%s%s", CurrentFileSTR, SSEQStr);
+			printf("%s%s", CurrentFileSTR, SSEQStr);
 		}
 	}
 }
@@ -874,74 +875,74 @@ void ReadSSEQ()
 	FILE* f = fopen(CurrentSPS, "rb");
 	if(!f)
 	{
-		iprintf("%s failed to open\n",CurrentSPS);
+		printf("%s failed to open\n",CurrentSPS);
 		return;
 	}
 
 	//Reads SSEQDataOffset
 	fseek(f, 0x08, SEEK_SET);
-	//iprintf("Reading SSEQ data offset.\n");
+	//printf("Reading SSEQ data offset.\n");
 	//swiWaitForVBlank();
 	fread(&SSEQDataOffset, 1, 4, f);
 
 	//Reads SSEQ offset
 	fseek(f, SSEQDataOffset + (SSEQListOffset[CurrentSSEQ] * 48), SEEK_SET);
-	//iprintf("Reading SSEQ offset.\n");
+	//printf("Reading SSEQ offset.\n");
 	//swiWaitForVBlank();
 	fread(&SSEQOffset, 1, 4, f);
 
 	//Reads SSEQ size
-	//iprintf("Reading SSEQ size.\n");
+	//printf("Reading SSEQ size.\n");
 	//swiWaitForVBlank();
 	fread(&SSEQSize, 1, 4, f);
 
 	//Reads BANK offset
-	//iprintf("Reading BANK offset.\n");
+	//printf("Reading BANK offset.\n");
 	//swiWaitForVBlank();
 	fread(&BANKOffset, 1, 4, f);
 
 	//Reads BANK size
-	//iprintf("Reading BANK size.\n");
+	//printf("Reading BANK size.\n");
 	//swiWaitForVBlank();
 	fread(&BANKSize, 1, 4, f);
 
 	//Reads WAVEARC1 offset
-	//iprintf("Reading WAVEARC1 offset.\n");
+	//printf("Reading WAVEARC1 offset.\n");
 	//swiWaitForVBlank();
 	fread(&WAVEARC1Offset, 1, 4, f);
 
 	//Reads WAVEARC1 size
-	//iprintf("Reading WAVEARC1 size.\n");
+	//printf("Reading WAVEARC1 size.\n");
 	//swiWaitForVBlank();
 	fread(&WAVEARC1Size, 1, 4, f);
 
 	//Reads WAVEARC2 offset
-	//iprintf("Reading WAVEARC2 offset.\n");
+	//printf("Reading WAVEARC2 offset.\n");
 	//swiWaitForVBlank();
 	fread(&WAVEARC2Offset, 1, 4, f);
 
 	//Reads WAVEARC2 size
-	//iprintf("Reading WAVEARC2 size.\n");
+	//printf("Reading WAVEARC2 size.\n");
 	//swiWaitForVBlank();
 	fread(&WAVEARC2Size, 1, 4, f);
 
 	//Reads WAVEARC3 offset
-	//iprintf("Reading WAVEARC3 offset.\n");
+	//printf("Reading WAVEARC3 offset.\n");
 	//swiWaitForVBlank();
 	fread(&WAVEARC3Offset, 1, 4, f);
 
 	//Reads WAVEARC3 size
-	//iprintf("Reading WAVEARC3 size.\n");
+	//printf("Reading WAVEARC3 size.\n");
 	//swiWaitForVBlank();
 	fread(&WAVEARC3Size, 1, 4, f);
 
 	//Reads WAVEARC4 offset
-	//iprintf("Reading WAVEARC4 offset.\n");
+	//printf("Reading WAVEARC4 offset.\n");
 	//swiWaitForVBlank();
 	fread(&WAVEARC4Offset, 1, 4, f);
 
 	//Reads WAVEARC4 size
-	//iprintf("Reading WAVEARC4 size.\n");
+	//printf("Reading WAVEARC4 size.\n");
 	//swiWaitForVBlank();
 	fread(&WAVEARC4Size, 1, 4, f);
 
@@ -951,14 +952,14 @@ void ReadSSEQ()
 	//Plays SSEQ
 	if(SSEQOffset != 0)
 	{
-		
-		
+
+
 		if((SSEQSize + BANKSize + WAVEARC1Size + WAVEARC2Size + WAVEARC3Size + WAVEARC4Size) > Max_RAM)
 		{
-			iprintf("%s is not currently playable.\n", SSEQList[CurrentSSEQ]);
-			iprintf("Data size exceeds Ram size\n");
-			iprintf("Available Ram = %d\n", Max_RAM);
-			iprintf("Data size = %d\n",(SSEQSize + BANKSize + WAVEARC1Size + WAVEARC2Size + WAVEARC3Size + WAVEARC4Size));
+			printf("%s is not currently playable.\n", SSEQList[CurrentSSEQ]);
+			printf("Data size exceeds Ram size\n");
+			printf("Available Ram = %d\n", (int)Max_RAM);
+			printf("Data size = %d\n", (int)(SSEQSize + BANKSize + WAVEARC1Size + WAVEARC2Size + WAVEARC3Size + WAVEARC4Size));
 			while(!(keysDown() & KEY_B))
 			{
 				scanKeys();
@@ -977,12 +978,12 @@ void ReadSSEQ()
 		{
 			consoleClear();
 			PlaySeqNDS(CurrentNDS, SSEQOffset, SSEQSize, BANKOffset, BANKSize, WAVEARC1Offset, WAVEARC1Size, WAVEARC2Offset, WAVEARC2Size, WAVEARC3Offset, WAVEARC3Size, WAVEARC4Offset, WAVEARC4Size);
-			
-			iprintf("Playing %s.\n", SSEQList[CurrentSSEQ]);
+
+			printf("Playing %s.\n", SSEQList[CurrentSSEQ]);
 			if(AutoPlay)
-				iprintf("Auto Play enabled\n");
+				printf("Auto Play enabled\n");
 			else
-				iprintf("Auto Play disabled\n");
+				printf("Auto Play disabled\n");
 			//swiWaitForVBlank();
 			PlayMode = true;
 			SSEQMode = false;
@@ -1000,7 +1001,7 @@ void ReadSSEQ()
 	}
 	else
 	{
-		iprintf("%s seems to be a dummy file.\n", SSEQList[CurrentSSEQ]);
+		printf("%s seems to be a dummy file.\n", SSEQList[CurrentSSEQ]);
 		while(!(keysDown() & KEY_B))
 		{
 			scanKeys();
