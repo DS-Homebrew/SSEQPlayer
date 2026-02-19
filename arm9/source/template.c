@@ -83,6 +83,8 @@ int main(int _argc, char **_argv)
 
 	if (isDSiMode()) {
 		Max_RAM = 0xF80000;	// Increase RAM limit for DSi mode
+	} else if (swiIsDebugger()) {
+		Max_RAM += 0x400000; // Increase RAM limit for debug DS consoles
 	}
 
 	argc=_argc; argv=_argv;
